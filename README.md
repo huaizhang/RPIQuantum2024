@@ -42,4 +42,4 @@ The simulations can be done 10000 times and obtain the distribution of annual po
 ---
 [^1]: We use the first day of the month to indicate the month. The performance is for 3/1/2024 is the total return from 3/1/2024 to 3/31/2024.
 [^2]: "Rebalance" means to reset the weights after the movement of markets. For example, the 30%-30%-40% will deviate from the original values after the three asset classes perform differently.
-[^3] Logarithmic return is calculated as log(1+r) where r is the return. The logarithmic returns can be assumed to be normally distributed.
+[^3]: Logarithmic return is calculated as log(1+r) where r is the return. The logarithmic returns can be assumed to be normally distributed.
