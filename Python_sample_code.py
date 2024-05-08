@@ -14,6 +14,7 @@ historic_data["portfolio"] = historic_data.iloc[:, 1:4].dot(weights)
 log_returns = np.log(1 + historic_data.iloc[:, 1:4])
 # calculate the coveriance matrix
 cov_matrix = log_returns.cov()
+print(cov_matrix)
 # caluclate the percentage volatility of each asset
 volatilities = np.exp(np.sqrt(np.diag(cov_matrix))) - 1
 # calculate the correlation matrix
@@ -24,19 +25,21 @@ annual_expected_returns = np.array([0.1, 0.1, 0.06])
 # convert the annualized expected returns to monthly logarithmic returns
 monthly_expected_log_returns = np.log(1 + annual_expected_returns) / 12
 
+
 simulated_log_returns = np.random.multivariate_normal(
     monthly_expected_log_returns, cov_matrix, 360
 )
 simulated_log_returns = pd.DataFrame(
     simulated_log_returns,
-    columns=["US Equities", "International Equiteis", "Global Fixed Income"],
+    columns=["US Equities", "International Equities", "Global Fixed Income"],
 )
+
 # convert the simulated logarithmic returns to percentage returns
 simulated_returns = np.exp(1 + simulated_log_returns) - 1
 # calculate the portfolio performance
 simulated_returns["portfolio"] = simulated_returns.dot(weights)
 # calculate the annual portfolio return and annual volatility
-annual_portfolio_return = (1 + simulated_returns["portfolio"]).prod() ^ (
+annual_portfolio_return = (1 + simulated_returns["portfolio"]).prod() ** (
     12 / simulated_log_returns.shape[0]
 ) - 1
 annual_portfolio_volatility = np.std(simulated_returns["portfolio"]) * np.sqrt(12)
@@ -58,9 +61,11 @@ quarterly_returns = quarterly_returns.dropna()
 quarterly_returns = quarterly_returns.reset_index(drop=True)
 # calculate the portfolio performance
 quarterly_returns["portfolio"] = quarterly_returns.dot(weights)
-annual_portfolio_return = (1 + quarterly_returns["portfolio"]).prod() ^ (
+annual_portfolio_return = (1 + quarterly_returns["portfolio"]).prod() ** (
     4 / quarterly_returns.shape[0]
 ) - 1
 annual_portfolio_volatility = np.std(simulated_returns["portfolio"]) * np.sqrt(4)
 
 # Dynamic rebalancing based on the historical data
+
+ 
