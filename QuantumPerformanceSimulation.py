@@ -4,6 +4,8 @@ import datetime
 import matplotlib.pyplot as plt
 from qiskit_finance.data_providers import BaseDataProvider
 from qiskit_finance.circuit.library import GaussianConditionalIndependenceModel
+
+
 class StockDataProcessor(BaseDataProvider):
     """
     StockDataProcessor is a child class of parent class BaseDataProvider from Qiskit Finance. 
@@ -106,11 +108,13 @@ for (cnt, ticker) in enumerate(data._tickers):
     plt.plot(data._data.iloc[:, cnt], label=ticker)
 plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.1), ncol=3)
 plt.xticks(rotation=90)
-plt.savefig('foo2.png')
+plt.savefig('StockGraph.png')
 
 
 mean_vector = data.get_period_return_mean_vector() 
 cov_matrix = data.get_period_return_covariance_matrix() 
+plt.imshow(cov_matrix)
+plt.savefig('StockCovar.png')
 volatility = np.exp(np.sqrt(np.diag(cov_matrix))) - 1
 
 std_devs = np.sqrt(np.diag(cov_matrix))
