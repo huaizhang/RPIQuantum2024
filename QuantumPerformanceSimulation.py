@@ -143,12 +143,11 @@ normal_max_value = 3  # Truncate the latent normal random variable Z between +/-
 # Create Gaussian conditional independence model
 model = GaussianConditionalIndependenceModel(n_normal, normal_max_value, monthly_expected_log_returns, correlation_matrix_adjusted)
 
-
+import seaborn as sns
 num_qubits = [3, 3 , 3]
 print(monthly_expected_log_returns)
 print(cov_matrix)
 mvnd = NormalDistribution(num_qubits,monthly_expected_log_returns, cov_matrix )
-
 qc = QuantumCircuit(sum(num_qubits))
 qc.append(mvnd, range(sum(num_qubits)))
 qc.append(QFT(sum(num_qubits)), range(sum(num_qubits)))
@@ -159,45 +158,34 @@ sampler = Sampler()
 job = sampler.run([qc], shots=120)
 result = job.result()
 
-# Extract counts and convert to sampled values
+# Extract quasi-probabilities and convert them to binary-encoded samples
 counts = result.quasi_dists[0].nearest_probability_distribution().binary_probabilities()
-sample_values = np.array([int(k, 2) for k, v in counts.items() for _ in range(int(v * 120))])
+binary_samples = [k for k, v in counts.items() for _ in range(int(v * 120))]
 
+# Decode samples back to individual asset values
+def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
+    asset_values = []
+    start_idx = 0 # Index to keep track of qubit groups
+    for i, qubits in enumerate(num_qubits):
+        end_idx = start_idx + qubits # End index for current asset's qubits
+        asset_bin = binary_sample[start_idx:end_idx] # Get the binary string
+         # Convert binary to float in [0, 1] range and scale to asset return
+        asset_value = int(asset_bin, 2) / (2**qubits - 1)
+        value = mu[i] + np.sqrt(sigma[i][i]) * (2 * asset_value - 1)
+        asset_values.append(value)
+        start_idx = end_idx # Move to the next set of qubits
+    return asset_values
 
-import seaborn as sns
+# Apply the conversion function to all samples
+asset_samples = np.array([binary_to_asset_values(sample, num_qubits, monthly_expected_log_returns, cov_matrix) for sample in binary_samples])
+
 # Plot the sampled distribution
-plt.figure(figsize=(10, 6))
-sns.histplot(sample_values, bins=15, kde=True, color='blue')
-plt.xlabel('Sampled Values')
-plt.ylabel('Frequency')
-plt.title('Sample Distribution of Multivariate Normal Distribution (120 Samples)')
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+for i, asset in enumerate(data._tickers):
+    sns.histplot(asset_samples[:, i], bins=15, kde=True, ax=axes[i], color='blue')
+    axes[i].set_xlabel(f'{asset} Returns')
+    axes[i].set_ylabel('Frequency')
+    axes[i].set_title(f'{asset} Returns Distribution (120 Samples)')
+
+fig.suptitle('Sample Distribution of Multivariate Normal Distribution (120 Samples)')
 plt.show()
-'''
-service = QiskitRuntimeService(channel="ibm_quantum", token="71fa7066cbcdde5ec3aa7ad8963dee340366302bb8575c6241cd54b28bafd6a9cf5331458c1bbd8a64abab7b98b202edf2102e77de87cd5e0d6b3e7446eb489e")
-backend = service.backend("ibm_rensselaer")
-
-pm = generate_preset_pass_manager(backend=backend, optimization_level=1)
-isa_circuit = pm.run(circuit)
-isa_circuit.depth() 
-sampler = Sampler(backend)
-# Initialize an empty DataFrame to hold results
-columns = ["US Equities", "International Equities", "Global Fixed Income"]
-simulated_log_returns = pd.DataFrame(columns=columns)
-
-num_months = 120
-# Simulate 120 months
-for _ in range(num_months):
-    job = sampler.run([(isa_circuit,)], shots=5000)
-    result = job.result()
-    counts = result[0].data.C.get_counts()
-    
-    # Average the results to get the expected log return per month
-    avg_sample = np.mean(counts, axis=0)
-    simulated_log_returns = simulated_log_returns.append(pd.Series(avg_sample, index=columns), ignore_index=True)
-
-# Adjust index to represent months
-simulated_log_returns.index = range(1, num_months + 1)
-
-# Print or process the simulated log returns
-print(simulated_log_returns)
-'''
