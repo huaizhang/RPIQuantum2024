@@ -2,8 +2,16 @@ import pandas as pd
 import numpy as np
 import datetime
 import matplotlib.pyplot as plt
+from qiskit_ibm_runtime import SamplerV2 as Sampler
+from qiskit_finance.circuit.library.probability_distributions import NormalDistribution
+from qiskit import QuantumCircuit
+from qiskit.primitives import Sampler
+from qiskit.circuit.library import QFT
 from qiskit_finance.data_providers import BaseDataProvider
 from qiskit_finance.circuit.library import GaussianConditionalIndependenceModel
+from qiskit_ibm_runtime import QiskitRuntimeService, Session
+
+
 
 
 class StockDataProcessor(BaseDataProvider):
@@ -113,8 +121,7 @@ plt.savefig('StockGraph.png')
 
 mean_vector = data.get_period_return_mean_vector() 
 cov_matrix = data.get_period_return_covariance_matrix() 
-plt.imshow(cov_matrix)
-plt.savefig('StockCovar.png')
+precision_matrix = np.linalg.inv(cov_matrix) # I think we need to use this for the GaussianConditionalIndependenceModel rather than the covariance matrix? not sure 
 volatility = np.exp(np.sqrt(np.diag(cov_matrix))) - 1
 
 std_devs = np.sqrt(np.diag(cov_matrix))
@@ -134,6 +141,63 @@ n_normal = 3  # Number of qubits to represent the latent normal random variable 
 normal_max_value = 3  # Truncate the latent normal random variable Z between +/- this value
 
 # Create Gaussian conditional independence model
-print(monthly_expected_log_returns)
 model = GaussianConditionalIndependenceModel(n_normal, normal_max_value, monthly_expected_log_returns, correlation_matrix_adjusted)
 
+
+num_qubits = [3, 3 , 3]
+print(monthly_expected_log_returns)
+print(cov_matrix)
+mvnd = NormalDistribution(num_qubits,monthly_expected_log_returns, cov_matrix )
+
+qc = QuantumCircuit(sum(num_qubits))
+qc.append(mvnd, range(sum(num_qubits)))
+qc.append(QFT(sum(num_qubits)), range(sum(num_qubits)))
+qc.measure_all()
+
+# Sample using the Sampler primitive
+sampler = Sampler()
+job = sampler.run([qc], shots=120)
+result = job.result()
+
+# Extract counts and convert to sampled values
+counts = result.quasi_dists[0].nearest_probability_distribution().binary_probabilities()
+sample_values = np.array([int(k, 2) for k, v in counts.items() for _ in range(int(v * 120))])
+
+
+import seaborn as sns
+# Plot the sampled distribution
+plt.figure(figsize=(10, 6))
+sns.histplot(sample_values, bins=15, kde=True, color='blue')
+plt.xlabel('Sampled Values')
+plt.ylabel('Frequency')
+plt.title('Sample Distribution of Multivariate Normal Distribution (120 Samples)')
+plt.show()
+'''
+service = QiskitRuntimeService(channel="ibm_quantum", token="71fa7066cbcdde5ec3aa7ad8963dee340366302bb8575c6241cd54b28bafd6a9cf5331458c1bbd8a64abab7b98b202edf2102e77de87cd5e0d6b3e7446eb489e")
+backend = service.backend("ibm_rensselaer")
+
+pm = generate_preset_pass_manager(backend=backend, optimization_level=1)
+isa_circuit = pm.run(circuit)
+isa_circuit.depth() 
+sampler = Sampler(backend)
+# Initialize an empty DataFrame to hold results
+columns = ["US Equities", "International Equities", "Global Fixed Income"]
+simulated_log_returns = pd.DataFrame(columns=columns)
+
+num_months = 120
+# Simulate 120 months
+for _ in range(num_months):
+    job = sampler.run([(isa_circuit,)], shots=5000)
+    result = job.result()
+    counts = result[0].data.C.get_counts()
+    
+    # Average the results to get the expected log return per month
+    avg_sample = np.mean(counts, axis=0)
+    simulated_log_returns = simulated_log_returns.append(pd.Series(avg_sample, index=columns), ignore_index=True)
+
+# Adjust index to represent months
+simulated_log_returns.index = range(1, num_months + 1)
+
+# Print or process the simulated log returns
+print(simulated_log_returns)
+'''
