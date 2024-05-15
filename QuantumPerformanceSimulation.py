@@ -136,56 +136,99 @@ correlation_matrix_adjusted.remove(1.)
 annual_expected_returns = np.array([0.1, 0.1, 0.06]) # Standard default probabilities
 monthly_expected_log_returns = np.log(1 + annual_expected_returns) / 12
 
-# Gaussian Conditional Independence Model parameters
-n_normal = 3  # Number of qubits to represent the latent normal random variable Z
-normal_max_value = 3  # Truncate the latent normal random variable Z between +/- this value
+num_qubits = [3,3,3]
+def normalize_probabilities(means, cov_matrix):
+    """
+    Normalize the mean and covariance matrix so that the integral over the
+    probability density function equals 1.
+    
+    Args:
+        means (np.ndarray): Mean vector of the distribution.
+        cov_matrix (np.ndarray): Covariance matrix of the distribution.
+    
+    Returns:
+        (np.ndarray, np.ndarray): Normalized mean vector and covariance matrix.
+    """
+    # Assuming a multivariate normal, calculate a simple scaling factor
+    # This is a placeholder: actual normalization might depend on how these
+    # are used to generate probabilities.
+    scaling_factor = np.sqrt(np.linalg.det(2 * np.pi * cov_matrix))
+    normalized_means = means / scaling_factor
+    normalized_cov = cov_matrix / scaling_factor
+    
+    return normalized_means, normalized_cov
 
-# Create Gaussian conditional independence model
-model = GaussianConditionalIndependenceModel(n_normal, normal_max_value, monthly_expected_log_returns, correlation_matrix_adjusted)
+# Normalize your mean vector and covariance matrix
+normalized_mean_vector, normalized_cov_matrix = normalize_probabilities(mean_vector, cov_matrix)
 
-import seaborn as sns
-num_qubits = [3, 3 , 3]
-print(monthly_expected_log_returns)
-print(cov_matrix)
-mvnd = NormalDistribution(num_qubits,monthly_expected_log_returns, cov_matrix )
+std_devs = np.sqrt(np.diag(cov_matrix))
+
+bounds = [(monthly_expected_log_returns[i] - 3*std_devs[i], monthly_expected_log_returns[i] + 3*std_devs[i]) for i in range(len(monthly_expected_log_returns))]
+
+print("Calculated Bounds:")
+for i, b in enumerate(bounds):
+    print(f"Dimension {i+1}: {b}")
+# Use normalized outputs for your quantum operations
+mvnd = NormalDistribution(num_qubits, normalized_mean_vector, normalized_cov_matrix, bounds=bounds)
 qc = QuantumCircuit(sum(num_qubits))
 qc.append(mvnd, range(sum(num_qubits)))
-qc.append(QFT(sum(num_qubits)), range(sum(num_qubits)))
+#qc.append(QFT(sum(num_qubits)), range(sum(num_qubits)))
 qc.measure_all()
 
 # Sample using the Sampler primitive
 sampler = Sampler()
-job = sampler.run([qc], shots=120)
+job = sampler.run([qc], shots=10000)
 result = job.result()
 
-# Extract quasi-probabilities and convert them to binary-encoded samples
+# Assuming 'result' contains the output from the Sampler
 counts = result.quasi_dists[0].nearest_probability_distribution().binary_probabilities()
-binary_samples = [k for k, v in counts.items() for _ in range(int(v * 120))]
 
-# Decode samples back to individual asset values
-def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
-    asset_values = []
-    start_idx = 0 # Index to keep track of qubit groups
-    for i, qubits in enumerate(num_qubits):
-        end_idx = start_idx + qubits # End index for current asset's qubits
-        asset_bin = binary_sample[start_idx:end_idx] # Get the binary string
-         # Convert binary to float in [0, 1] range and scale to asset return
-        asset_value = int(asset_bin, 2) / (2**qubits - 1)
-        value = mu[i] + np.sqrt(sigma[i][i]) * (2 * asset_value - 1)
-        asset_values.append(value)
-        start_idx = end_idx # Move to the next set of qubits
-    return asset_values
+# Convert counts to probabilities
+total_shots = sum(counts.values())
+probabilities = {state: count / total_shots for state, count in counts.items()}
 
-# Apply the conversion function to all samples
-asset_samples = np.array([binary_to_asset_values(sample, num_qubits, monthly_expected_log_returns, cov_matrix) for sample in binary_samples])
+# Sort states for coherent plotting (optional but helpful)
+sorted_states = sorted(probabilities.items(), key=lambda x: int(x[0], 2))  # Sort by binary value
 
-# Plot the sampled distribution
-fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-for i, asset in enumerate(data._tickers):
-    sns.histplot(asset_samples[:, i], bins=15, kde=True, ax=axes[i], color='blue')
-    axes[i].set_xlabel(f'{asset} Returns')
-    axes[i].set_ylabel('Frequency')
-    axes[i].set_title(f'{asset} Returns Distribution (120 Samples)')
+# Extract states and their probabilities for plotting
+states = [int(state, 2) for state, _ in sorted_states]  # Convert binary states to integers
+values = [prob for _, prob in sorted_states]
 
-fig.suptitle('Sample Distribution of Multivariate Normal Distribution (120 Samples)')
-plt.show()
+# Prepare to plot distributions for each stock
+fig, axes = plt.subplots(1, len(data._tickers), figsize=(18, 6))
+
+for i, ticker in enumerate(data._tickers):
+    stock_states = {k: 0 for k in range(8)}  # Initialize all possible states with zero probability
+    total_prob = 0  # Initialize total probability for normalization
+
+    for binary_state, prob in probabilities.items():
+        # Extract substate corresponding to current stock (i-th set of 3 qubits)
+        substate = binary_state[3*i:3*(i+1)]
+        decimal_state = int(substate, 2)
+        stock_states[decimal_state] += prob
+        total_prob += prob
+
+    # Normalize probabilities if total_prob is not 1
+    if total_prob != 0:
+        for state in stock_states:
+            stock_states[state] /= total_prob
+
+    # Extract lower and upper bounds for current stock
+    lower_bound, upper_bound = bounds[i]
+
+    # Normalize states to their specific range
+    state_keys = sorted(stock_states.keys())  # Ensuring states are sorted for plotting
+    normalized_states = [(lower_bound + (upper_bound - lower_bound) * (state / max(state_keys))) for state in state_keys]
+    values = [stock_states[state] for state in state_keys]
+
+    # Plot for the i-th stock
+    axes[i].bar(normalized_states, values, width=(upper_bound - lower_bound) / len(state_keys), align='edge', color='b')
+    axes[i].set_title(f'{ticker} Normal Distribution')
+    axes[i].set_xlabel('Normalized State (Scaled to Actual Bounds)')
+    axes[i].set_ylabel('Probability')
+    axes[i].grid(True)
+    axes[i].set_xticks(normalized_states)  # Set x-ticks to match the state values adjusted to new bounds
+
+plt.tight_layout()
+plt.savefig("stock_distributions.png")
+
