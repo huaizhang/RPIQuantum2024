@@ -11,7 +11,7 @@ from qiskit_finance.data_providers import BaseDataProvider
 from qiskit_finance.circuit.library import GaussianConditionalIndependenceModel
 from qiskit_ibm_runtime import QiskitRuntimeService, Session
 
-
+from qiskit.quantum_info import Statevector
 
 
 class StockDataProcessor(BaseDataProvider):
@@ -121,7 +121,7 @@ plt.savefig('StockGraph.png')
 
 mean_vector = data.get_period_return_mean_vector() 
 cov_matrix = data.get_period_return_covariance_matrix() 
-precision_matrix = np.linalg.inv(cov_matrix) # I think we need to use this for the GaussianConditionalIndependenceModel rather than the covariance matrix? not sure 
+precision_matrix = np.linalg.inv(cov_matrix)  
 volatility = np.exp(np.sqrt(np.diag(cov_matrix))) - 1
 
 std_devs = np.sqrt(np.diag(cov_matrix))
@@ -136,22 +136,59 @@ correlation_matrix_adjusted.remove(1.)
 annual_expected_returns = np.array([0.1, 0.1, 0.06]) # Standard default probabilities
 monthly_expected_log_returns = np.log(1 + annual_expected_returns) / 12
 
-# Gaussian Conditional Independence Model parameters
-n_normal = 3  # Number of qubits to represent the latent normal random variable Z
-normal_max_value = 3  # Truncate the latent normal random variable Z between +/- this value
-
-# Create Gaussian conditional independence model
-model = GaussianConditionalIndependenceModel(n_normal, normal_max_value, monthly_expected_log_returns, correlation_matrix_adjusted)
-
 import seaborn as sns
-num_qubits = [3, 3 , 3]
+
+
+simulated_log_returns = np.random.multivariate_normal(
+    monthly_expected_log_returns, cov_matrix, 360
+)
+simulated_log_returns = pd.DataFrame(
+    simulated_log_returns,
+    columns=["US Equities", "International Equities", "Global Fixed Income"],
+)
+# Set up the matplotlib figure
+plt.figure(figsize=(18, 6))
+
+# Draw a subplot for each asset category
+for i, column in enumerate(simulated_log_returns.columns, 1):
+    plt.subplot(1, 3, i)  # 1 row, 3 columns, ith subplot
+    sns.histplot(simulated_log_returns[column], bins=30, kde=True)
+    plt.title(f'Distribution of {column}')
+    plt.xlabel('Log Returns')
+    plt.ylabel('Frequency')
+
+plt.tight_layout()
+plt.savefig("expectedoutput.png")
+
+num_qubits = [5, 5 , 5]
 print(monthly_expected_log_returns)
 print(cov_matrix)
-mvnd = NormalDistribution(num_qubits,monthly_expected_log_returns, cov_matrix )
+std_devs = np.sqrt(np.diag(cov_matrix))
+
+# Calculate bounds as +- 3 standard deviations around the mean
+bounds = [(monthly_expected_log_returns[i] - 3*std_devs[i], monthly_expected_log_returns[i] + 3*std_devs[i]) for i in range(len(monthly_expected_log_returns))]
+
+# Print calculated bounds
+print("Calculated Bounds:")
+for i, b in enumerate(bounds):
+    print(f"Dimension {i+1}: {b}")
+mvnd = NormalDistribution(num_qubits,monthly_expected_log_returns, cov_matrix, bounds=bounds )
+
+
+'''
+plt.plot(mvnd.values, mvnd.probabilities)
+plt.xlabel('Values')
+plt.ylabel('Probabilities')
+plt.title('Histogram of normal distribution')
+plt.show()
+
+'''
+
 qc = QuantumCircuit(sum(num_qubits))
 qc.append(mvnd, range(sum(num_qubits)))
-qc.append(QFT(sum(num_qubits)), range(sum(num_qubits)))
+#qc.append(QFT(sum(num_qubits)), range(sum(num_qubits)))
 qc.measure_all()
+
 
 # Sample using the Sampler primitive
 sampler = Sampler()
@@ -160,6 +197,7 @@ result = job.result()
 
 # Extract quasi-probabilities and convert them to binary-encoded samples
 counts = result.quasi_dists[0].nearest_probability_distribution().binary_probabilities()
+print(counts)
 binary_samples = [k for k, v in counts.items() for _ in range(int(v * 120))]
 
 # Decode samples back to individual asset values
@@ -182,7 +220,7 @@ asset_samples = np.array([binary_to_asset_values(sample, num_qubits, monthly_exp
 # Plot the sampled distribution
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 for i, asset in enumerate(data._tickers):
-    sns.histplot(asset_samples[:, i], bins=15, kde=True, ax=axes[i], color='blue')
+    sns.histplot(asset_samples[:, i], bins=15, kde=False, ax=axes[i], color='blue')
     axes[i].set_xlabel(f'{asset} Returns')
     axes[i].set_ylabel('Frequency')
     axes[i].set_title(f'{asset} Returns Distribution (120 Samples)')
