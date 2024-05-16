@@ -29,7 +29,6 @@ class StockDataProcessor(BaseDataProvider):
         self._end = pd.to_datetime(end)
         self._tickers = []
         self._data = pd.DataFrame()
-
     def load_data(self) -> pd.DataFrame:
         """
         Loads data from an Excel file into a DataFrame and sets the tickers.
@@ -127,6 +126,7 @@ volatility = np.exp(np.sqrt(np.diag(cov_matrix))) - 1
 std_devs = np.sqrt(np.diag(cov_matrix))
 # Calculate the correlation matrix
 correlation_matrix = cov_matrix / np.outer(std_devs, std_devs)
+print(correlation_matrix)
 flattened = list(set(correlation_matrix.flatten()))
 correlation_matrix_adjusted = [ round(elem, 4) for elem in flattened ] # Sensitivities of default probabilities rounded to 4 decimal places
 correlation_matrix_adjusted.remove(1.) #remove dummy data (correlation of 1 for same stock)
@@ -160,11 +160,12 @@ for i, column in enumerate(simulated_log_returns.columns, 1):
 plt.tight_layout()
 plt.savefig("expectedoutput.png")
 
-num_qubits = [5, 5 , 5]
+num_qubits = [4,4,4]
 print(monthly_expected_log_returns)
 print(cov_matrix)
 std_devs = np.sqrt(np.diag(cov_matrix))
 
+print(std_devs)
 # Calculate bounds as +- 3 standard deviations around the mean
 bounds = [(monthly_expected_log_returns[i] - 3*std_devs[i], monthly_expected_log_returns[i] + 3*std_devs[i]) for i in range(len(monthly_expected_log_returns))]
 
@@ -174,16 +175,6 @@ for i, b in enumerate(bounds):
     print(f"Dimension {i+1}: {b}")
 mvnd = NormalDistribution(num_qubits,monthly_expected_log_returns, cov_matrix, bounds=bounds )
 
-
-'''
-plt.plot(mvnd.values, mvnd.probabilities)
-plt.xlabel('Values')
-plt.ylabel('Probabilities')
-plt.title('Histogram of normal distribution')
-plt.show()
-
-'''
-
 qc = QuantumCircuit(sum(num_qubits))
 qc.append(mvnd, range(sum(num_qubits)))
 #qc.append(QFT(sum(num_qubits)), range(sum(num_qubits)))
@@ -192,13 +183,13 @@ qc.measure_all()
 
 # Sample using the Sampler primitive
 sampler = Sampler()
-job = sampler.run([qc], shots=120)
+job = sampler.run([qc], shots=360)
 result = job.result()
 
 # Extract quasi-probabilities and convert them to binary-encoded samples
 counts = result.quasi_dists[0].nearest_probability_distribution().binary_probabilities()
 print(counts)
-binary_samples = [k for k, v in counts.items() for _ in range(int(v * 120))]
+binary_samples = [k for k, v in counts.items() for _ in range(int(v * 360))]
 
 # Decode samples back to individual asset values
 def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
@@ -217,6 +208,68 @@ def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
 # Apply the conversion function to all samples
 asset_samples = np.array([binary_to_asset_values(sample, num_qubits, monthly_expected_log_returns, cov_matrix) for sample in binary_samples])
 
+
+def create_new_xslx_monthly_dates(load_data, filename):
+    import openpyxl
+    import datetime
+    import calendar
+    import os
+
+    def month_increment(start_date, num_months):
+        # Calculate the new month and year
+        new_month = (start_date.month + num_months - 1) % 12 + 1
+        new_year = start_date.year + (start_date.month + num_months - 1) // 12
+        
+        # Calculate the last day of the new month
+        last_day_of_month = calendar.monthrange(new_year, new_month)[1]
+        
+        # Ensure the new day is the last valid day of the new month if the original day doesn't exist in the new month
+        new_day = min(start_date.day, last_day_of_month)
+        return datetime.date(new_year, new_month, new_day)
+
+    # Define the start date
+    start_date = datetime.date(2004, 4, 30)
+
+    # Generate monthly dates for each row in the data array
+    monthly_dates = [month_increment(start_date, i) for i in range(load_data.shape[0])]
+
+    if os.path.exists(filename):
+            wb = openpyxl.load_workbook(filename)
+    else:
+        wb = openpyxl.Workbook()
+
+    ws = wb.active
+
+    # Clear the existing data in the worksheet
+    ws.delete_rows(1, ws.max_row)
+    # Create a new workbook and select the active worksheet
+   
+
+    # Set the column labels
+    ws.append(['Date', '^GSPC', '^ACWX', '^GLAB.L'])
+
+    # Iterate over the data and append each row to the worksheet with the monthly date
+    for i, row in enumerate(load_data):
+        ws.append([monthly_dates[i].strftime('%Y-%m-%d')] + row.tolist())
+
+    # Save the workbook
+    wb.save(filename)
+
+
+create_new_xslx_monthly_dates(asset_samples,filename="output.xslx")
+
+run_data = StockDataProcessor( 
+    start=datetime.datetime(2004, 4, 30),
+    end=datetime.datetime(2024, 3, 31),
+    file_path="output2.xlsx")
+run_data.run()
+cov_matrix = run_data.get_period_return_covariance_matrix() 
+print(cov_matrix)
+
+std_devs = np.sqrt(np.diag(cov_matrix))
+# Calculate the correlation matrix
+correlation_matrix2 = cov_matrix / np.outer(std_devs, std_devs)
+print(correlation_matrix2)
 # Plot the sampled distribution
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 for i, asset in enumerate(data._tickers):
@@ -227,3 +280,4 @@ for i, asset in enumerate(data._tickers):
 
 fig.suptitle('Sample Distribution of Multivariate Normal Distribution (120 Samples)')
 plt.show()
+
