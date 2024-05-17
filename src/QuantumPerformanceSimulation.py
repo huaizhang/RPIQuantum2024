@@ -8,7 +8,7 @@ from qiskit_finance.circuit.library.probability_distributions import NormalDistr
 from qiskit import QuantumCircuit
 from qiskit.primitives import Sampler
 import util
-from stockDataProcessor import StockDataProcessor
+from StockDataProcessor import StockDataProcessor
 
 def run_numpy_simulated_returns(cov_matrix, monthly_expected_log_returns):
     simulated_log_returns = np.random.multivariate_normal(
