@@ -68,7 +68,7 @@ binary_samples = [k for k, v in counts.items() for _ in range(int(v * 2000))]
 # Apply the conversion function to all samples
 asset_samples = np.array([util.binary_to_asset_values(sample, num_qubits, monthly_expected_log_returns, data._cov_matrix) for sample in binary_samples])
 #creating file for storing generated data
-util.create_new_xslx_monthly_dates(asset_samples,filename="data/output.xlsx")
+util.create_new_xlsx_monthly_dates(asset_samples,filename="data/output.xlsx")
 
 #creating data object for the generated data
 generated_Data = StockDataProcessor( 

@@ -17,7 +17,7 @@ def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
         start_idx = end_idx # Move to the next set of qubits
     return asset_values
 
-def create_new_xslx_monthly_dates(load_data, filename):
+def create_new_xlsx_monthly_dates(load_data, filename):
 
     def month_increment(start_date, num_months):
         # Calculate the new month and year
