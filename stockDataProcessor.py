@@ -1,11 +1,6 @@
 import pandas as pd
 import numpy as np
-import datetime
-import seaborn as sns
-import matplotlib.pyplot as plt
-from qiskit_ibm_runtime import SamplerV2 as Sampler
 from qiskit_finance.data_providers import BaseDataProvider
-from qiskit.quantum_info import Statevector
 
 class StockDataProcessor(BaseDataProvider):
     """
@@ -98,22 +93,3 @@ class StockDataProcessor(BaseDataProvider):
         print("Std Devs: ", self._stddev)
         print("Volatility: ", self._volatility)
         print("-------------------------------------------------------")
-
-
-# Example usage of class
-data = StockDataProcessor(
-    start=datetime.datetime(2004, 4, 30),
-    end=datetime.datetime(2024, 3, 31),
-    file_path="./data/historic_data.xlsx"
-)
-data.run()
-
-# Plotting log returns for each ticker
-for (cnt, ticker) in enumerate(data._tickers):
-    plt.plot(data._data.iloc[:, cnt], label=ticker)
-plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.1), ncol=3)
-plt.xticks(rotation=90)
-plt.savefig('StockGraph.png')
-
-data.run()
-data.print_stats()

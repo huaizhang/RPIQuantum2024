@@ -7,10 +7,6 @@ from qiskit_ibm_runtime import SamplerV2 as Sampler
 from qiskit_finance.circuit.library.probability_distributions import NormalDistribution
 from qiskit import QuantumCircuit
 from qiskit.primitives import Sampler
-from qiskit.circuit.library import QFT
-from qiskit_finance.data_providers import BaseDataProvider
-from qiskit_finance.circuit.library import GaussianConditionalIndependenceModel
-from qiskit_ibm_runtime import QiskitRuntimeService, Session
 import util
 from stockDataProcessor import StockDataProcessor
 
