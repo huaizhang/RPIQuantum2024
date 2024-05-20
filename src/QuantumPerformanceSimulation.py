@@ -10,29 +10,14 @@ from qiskit.primitives import Sampler
 import util
 from StockDataProcessor import StockDataProcessor
 
-def run_numpy_simulated_returns(cov_matrix, monthly_expected_log_returns):
-    simulated_log_returns = np.random.multivariate_normal(
-        monthly_expected_log_returns, cov_matrix, 360
-    )
-    simulated_log_returns = pd.DataFrame(
-        simulated_log_returns,
-        columns=["US Equities", "International Equities", "Global Fixed Income"],
-    )
-    # Set up the matplotlib figure
-    plt.figure(figsize=(18, 6))
-    # Draw a subplot for each asset category
-    for i, column in enumerate(simulated_log_returns.columns, 1):
-        plt.subplot(1, 3, i)  # 1 row, 3 columns, ith subplot
-        sns.histplot(simulated_log_returns[column], bins=30, kde=True)
-        plt.title(f'Distribution of {column}')
-        plt.xlabel('Log Returns')
-        plt.ylabel('Frequency')
-    plt.tight_layout()
-    plt.savefig("graphs/expectedoutput.png")
-
 def generate_quantum_normal_distribution(cov_matrix, monthly_expected_log_returns, num_qubits, stddev) -> QuantumCircuit:
     # Calculate bounds as +- 3 standard deviations around the mean
     bounds = [(monthly_expected_log_returns[i] - 3*stddev[i], monthly_expected_log_returns[i] + 3*stddev[i]) for i in range(len(monthly_expected_log_returns))]
+    #bounds = [ monthly_expected_log_returns[i] + 3*stddev[i] for i in range(len(monthly_expected_log_returns))]
+    #bottombounds = np.negative(bounds)
+    #finalbounds = list(zip(bottombounds, bounds))
+    #print(finalbounds)
+    print(bounds)
     mvnd = NormalDistribution(num_qubits,monthly_expected_log_returns, cov_matrix, bounds=bounds )
 
     qc = QuantumCircuit(sum(num_qubits))
@@ -51,9 +36,10 @@ data.print_stats()
 
 annual_expected_returns = np.array([0.1, 0.1, 0.06]) # Standard default probabilities
 monthly_expected_log_returns = np.log(1 + annual_expected_returns) / 12
+print(monthly_expected_log_returns)
 num_qubits = [3,3,3]
 
-run_numpy_simulated_returns(data._cov_matrix,monthly_expected_log_returns)
+util.run_numpy_simulated_returns(data._cov_matrix,monthly_expected_log_returns)
 qc = generate_quantum_normal_distribution(data._cov_matrix,monthly_expected_log_returns,num_qubits, data._stddev)
 
 # Sample using the Sampler primitive
@@ -81,7 +67,7 @@ generated_Data.print_stats()
 # Plot the sampled distribution
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 for i, asset in enumerate(data._tickers):
-    sns.histplot(asset_samples[:, i], bins=15, kde=False, ax=axes[i], color='blue')
+    sns.histplot(asset_samples[:, i], bins=16, kde=False, ax=axes[i], color='blue')
     axes[i].set_xlabel(f'{asset} Returns')
     axes[i].set_ylabel('Frequency')
     axes[i].set_title(f'{asset} Returns Distribution (120 Samples)')
