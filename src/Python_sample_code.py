@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # read data from ./data/historical_data.xlsx
-historic_data = pd.read_excel("./data/historic_data.xlsx")
+historic_data = pd.read_excel("../data/historic_data.xlsx")
 historic_data = historic_data.sort_values("Date")
 historic_data = historic_data.reset_index(drop=True)
 
@@ -35,7 +35,7 @@ simulated_log_returns = pd.DataFrame(
 )
 
 # convert the simulated logarithmic returns to percentage returns
-simulated_returns = np.exp(1 + simulated_log_returns) - 1
+simulated_returns = np.exp(simulated_log_returns) - 1
 # calculate the portfolio performance
 simulated_returns["portfolio"] = simulated_returns.dot(weights)
 # calculate the annual portfolio return and annual volatility
@@ -43,6 +43,16 @@ annual_portfolio_return = (1 + simulated_returns["portfolio"]).prod() ** (
     12 / simulated_log_returns.shape[0]
 ) - 1
 annual_portfolio_volatility = np.std(simulated_returns["portfolio"]) * np.sqrt(12)
+# calculate the Sharpe ratio
+risk_free_rate = 0.00
+sharpe_ratio = (annual_portfolio_return - risk_free_rate) / annual_portfolio_volatility
+# calculate the maximum drawdown
+cumulative_returns = (1 + simulated_returns["portfolio"]).cumprod()
+max_drawdown = np.min(
+    cumulative_returns / np.maximum.accumulate(cumulative_returns) - 1
+)
+# calculate the Calmar ratio
+calmar_ratio = annual_portfolio_return / max_drawdown
 
 # Rebalance the portfolio quarterly based on the historical data
 # Similar approach can be used to calculate the portfolio performance for other rebalancing frequencies
@@ -67,5 +77,3 @@ annual_portfolio_return = (1 + quarterly_returns["portfolio"]).prod() ** (
 annual_portfolio_volatility = np.std(simulated_returns["portfolio"]) * np.sqrt(4)
 
 # Dynamic rebalancing based on the historical data
-
- 

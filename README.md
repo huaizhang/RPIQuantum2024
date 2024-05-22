@@ -39,6 +39,12 @@ The simulations can be done 10000 times and obtain the distribution of annual po
 - Rebalance quartery, annually, or other fixed rebalance frequencies.
 - Reablance dynamically based on some rules.
 
+
+### 6. Some statistics
+- Sharpe Ratio is the ratio of annualized return and annualized volatility. In principle, we should subtract so-call risk-free rate from the annulaized return. We can set it to zero for now.
+- Maximum Drawdown is the maximum peak to trough loss of a portfolio.
+- Calmar Ratio is the ratio of annualized return over maximum drawdown.
+
 ---
 [^1]: We use the first day of the month to indicate the month. The performance is for 3/1/2024 is the total return from 3/1/2024 to 3/31/2024.
 [^2]: "Rebalance" means to reset the weights after the movement of markets. For example, the 30%-30%-40% will deviate from the original values after the three asset classes perform differently.
