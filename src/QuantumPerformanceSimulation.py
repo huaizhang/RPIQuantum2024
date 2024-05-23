@@ -13,10 +13,7 @@ from StockDataProcessor import StockDataProcessor
 def generate_quantum_normal_distribution(cov_matrix, monthly_expected_log_returns, num_qubits, stddev) -> QuantumCircuit:
     # Calculate bounds as +- 3 standard deviations around the mean
     bounds = [(monthly_expected_log_returns[i] - 3*stddev[i], monthly_expected_log_returns[i] + 3*stddev[i]) for i in range(len(monthly_expected_log_returns))]
-    #bounds = [ monthly_expected_log_returns[i] + 3*stddev[i] for i in range(len(monthly_expected_log_returns))]
-    #bottombounds = np.negative(bounds)
-    #finalbounds = list(zip(bottombounds, bounds))
-    #print(finalbounds)
+
     print(bounds)
     mvnd = NormalDistribution(num_qubits,monthly_expected_log_returns, cov_matrix, bounds=bounds )
 
