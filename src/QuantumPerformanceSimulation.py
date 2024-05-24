@@ -144,6 +144,29 @@ generated_percent_data.run()
 
 generated_percent_data.print_stats()
 
+#
+portfolio_returns = generated_percent_data._data.dot(annual_expected_returns)
+
+annual_portfolio_return = (1 + portfolio_returns).prod() ** (
+    12 / generated_Data._data.shape[0]
+) - 1
+annual_portfolio_volatility = np.std(portfolio_returns) * np.sqrt(12)
+risk_free_rate = 0.00
+sharpe_ratio = (annual_portfolio_return - risk_free_rate) / annual_portfolio_volatility
+# calculate the maximum drawdown
+cumulative_returns = (1 + portfolio_returns).cumprod()
+max_drawdown = np.min(
+    cumulative_returns / np.maximum.accumulate(cumulative_returns) - 1
+)
+# calculate the Calmar ratio
+calmar_ratio = annual_portfolio_return / max_drawdown
+
+print("annual_portfolio_return: ",annual_portfolio_return)
+print("annual_portfolio_volatility: ",annual_portfolio_volatility)
+print("sharpe_ratio: ",sharpe_ratio)
+print("max_drawdown: ", max_drawdown)
+print("calmar_ratio: ",calmar_ratio)
+
 # Plot the generated percent returns
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 for i, asset in enumerate(generated_percent_data._data.columns):
