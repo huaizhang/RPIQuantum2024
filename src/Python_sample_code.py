@@ -69,6 +69,7 @@ quarterly_returns = quarterly_returns.sort_index()
 quarterly_returns = quarterly_returns.pct_change()
 quarterly_returns = quarterly_returns.dropna()
 quarterly_returns = quarterly_returns.reset_index(drop=True)
+
 # calculate the portfolio performance
 quarterly_returns["portfolio"] = quarterly_returns.dot(weights)
 annual_portfolio_return = (1 + quarterly_returns["portfolio"]).prod() ** (

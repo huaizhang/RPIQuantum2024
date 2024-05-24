@@ -3,12 +3,38 @@ import numpy as np
 import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
-from qiskit_ibm_runtime import SamplerV2 as Sampler
+#from qiskit_ibm_runtime import SamplerV2 as Sampler
 from qiskit_finance.circuit.library.probability_distributions import NormalDistribution
 from qiskit import QuantumCircuit
 from qiskit.primitives import Sampler
 import util
 from StockDataProcessor import StockDataProcessor
+def calculate_monthly_returns(data):
+    monthly_returns = data.iloc[:, 1:4]
+
+    # Compute cumulative product of returns
+    monthly_returns = (1 + monthly_returns).cumprod()
+
+    # Extract dates and identify month ends
+    dates = data["Date"]
+    month_ends = dates.groupby([dates.dt.year, dates.dt.month]).transform('max')
+    month_end_indices = np.where(dates == month_ends)[0]
+
+    # Filter the returns to only include month ends
+    monthly_returns = monthly_returns.iloc[month_end_indices]
+
+    # Set the initial value to 1 for calculation purposes
+    monthly_returns.loc[-1] = 1
+    monthly_returns = monthly_returns.sort_index()
+
+    # Calculate the percentage change to get monthly returns
+    monthly_returns = monthly_returns.pct_change()
+
+    # Drop any rows with NaN values resulting from the percentage change calculation
+    monthly_returns = monthly_returns.dropna()
+
+    # Reset the index for the final output
+    monthly_returns = monthly_returns.reset_index(drop=True)
 
 def generate_quantum_normal_distribution(cov_matrix, monthly_expected_log_returns, num_qubits, stddev) -> QuantumCircuit:
     # Calculate bounds as +- 3 standard deviations around the mean
@@ -36,7 +62,7 @@ monthly_expected_log_returns = np.log(1 + annual_expected_returns) / 12
 print(monthly_expected_log_returns)
 num_qubits = [3,3,3]
 
-util.run_numpy_simulated_returns(data._cov_matrix,monthly_expected_log_returns)
+#util.run_numpy_simulated_returns(data._cov_matrix,monthly_expected_log_returns)
 qc = generate_quantum_normal_distribution(data._cov_matrix,monthly_expected_log_returns,num_qubits, data._stddev)
 
 # Sample using the Sampler primitive
@@ -71,4 +97,17 @@ for i, asset in enumerate(data._tickers):
 
 fig.suptitle('Sample Distribution of Multivariate Normal Distribution (120 Samples)')
 plt.savefig("graphs/gen_output.png")
+
+print(generated_Data._data)
+simulated_percent_returns = np.exp(generated_Data._data) - 1
+print(simulated_percent_returns)
+util.create_new_xlsx_monthly_dates(simulated_percent_returns,filename="data/percentage_output.xlsx")
+generated_percent_data = StockDataProcessor( 
+    start=datetime.datetime(2004, 4, 30),
+    end=datetime.datetime(2024, 3, 31),
+    file_path="data/percentage_output.xlsx")
+generated_percent_data.run()
+plt.savefig("graphs/gen_percent_output.png")
+
+calculate_monthly_returns(generated_percent_data)
 

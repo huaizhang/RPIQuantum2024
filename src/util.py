@@ -44,6 +44,8 @@ def create_new_xlsx_monthly_dates(load_data, filename):
 
     # Iterate over the data and append each row to the worksheet with the monthly date
     for i, row in enumerate(load_data):
-        ws.append([monthly_dates[i].strftime('%Y-%m-%d')] + row.tolist())
+        print(row)
+        if(not type(row) == str):
+            ws.append([monthly_dates[i].strftime('%Y-%m-%d')] + row.tolist())
     wb.save(filename)
 
