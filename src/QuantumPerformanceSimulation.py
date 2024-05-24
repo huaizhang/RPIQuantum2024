@@ -69,6 +69,7 @@ data = StockDataProcessor(
     file_path="./data/historic_data.xlsx"
 )
 data.run()
+print("[ORIGINAL DATA STATS]")
 data.print_stats()
 
 annual_expected_returns = np.array([0.1, 0.1, 0.06]) # Standard default probabilities
@@ -90,21 +91,15 @@ binary_samples = [k for k, v in counts.items() for _ in range(int(v * 2000))]
 # Apply the conversion function to all samples
 asset_samples = np.array([util.binary_to_asset_values(sample, num_qubits, monthly_expected_log_returns, data._cov_matrix) for sample in binary_samples])
 #creating file for storing generated data
-print("ASSET SAMPLES")
-print(asset_samples)
 util.create_new_xlsx_monthly_dates(asset_samples,filename="data/output.xlsx")
-"""
-I've edited the class to take in a dataframe and fill the self._data with that data instead or it can take a file (either/or)
-The percentage_output excel file does not fill and I don't know why yet, it's probably a stupid issue 
-I first want to turn our new percent returns back into log returns and compare it to the original log returns so then we can
-verify that we are doing it properly
-"""
+
 #creating data object for the generated data
 generated_Data = StockDataProcessor( 
     start=datetime.datetime(2004, 4, 30),
     end=datetime.datetime(2170, 11, 30),
     file_path="data/output.xlsx")
 generated_Data.run()
+print("[GENERATED DATA STATS]")
 generated_Data.print_stats()
 
 # Plot the sampled distribution
@@ -117,14 +112,8 @@ for i, asset in enumerate(data._tickers):
 
 fig.suptitle('Sample Distribution of Multivariate Normal Distribution (120 Samples)')
 plt.savefig("graphs/gen_output.png")
-# Convert generated data to percent returns
 simulated_percent_returns = np.array(np.exp(generated_Data._data) - 1)
-# Convert the simulated percent returns to a DataFrame
-#simulated_percent_returns_df = pd.DataFrame(simulated_percent_returns)
 
-#print(simulated_percent_returns_df)
-# Save the simulated percent returns to Excel
-print("COUNT IS \n\n\n\n",generated_Data._data.count())
 util.create_new_xlsx_monthly_dates(simulated_percent_returns, filename="data/percentage_output.xlsx",secondTime=1)
 
 # Load the generated percent data
@@ -135,21 +124,11 @@ generated_percent_data = StockDataProcessor(
 )
 generated_percent_data.run()
 
-# Ensure the loaded data has no empty rows and columns
-#generated_percent_data._data.dropna(how='all', inplace=True)
-#generated_percent_data._data.dropna(axis=1, how='all', inplace=True)
+#generated_percent_data.print_stats()
 
-# Print the cleaned data to check
-#print(generated_percent_data._data.head())
-
-generated_percent_data.print_stats()
-
-#
 portfolio_returns = generated_percent_data._data.dot(annual_expected_returns)
 
-annual_portfolio_return = (1 + portfolio_returns).prod() ** (
-    12 / generated_Data._data.shape[0]
-) - 1
+annual_portfolio_return = (1 + portfolio_returns).prod() ** (12 / generated_Data._data.shape[0]) - 1
 annual_portfolio_volatility = np.std(portfolio_returns) * np.sqrt(12)
 risk_free_rate = 0.00
 sharpe_ratio = (annual_portfolio_return - risk_free_rate) / annual_portfolio_volatility
@@ -177,14 +156,13 @@ for i, asset in enumerate(generated_percent_data._data.columns):
 
 fig.suptitle('Generated Percent Returns Distribution')
 plt.savefig("graphs/gen_percent_output.png")
+
 target_weights = {
     '^GSPC': 0.30,
     '^ACWX': 0.30,
     '^GLAB.L': 0.40
 }
-
 frequency = 'quarterly'  # Choose from 'monthly', 'quarterly', 'semi-annual', 'annual'
+generated_percent_data.rebalance_portfolio_over_time(target_weights, frequency, 0) # change to 1 to see prints
 
-final_weights = generated_percent_data.rebalance_portfolio_over_time(target_weights, frequency)
-print("Final Portfolio Weights:", {stock: f'{weight:.6f}' for stock, weight in final_weights.items()})
-print(generated_percent_data._data)
+#print(generated_percent_data._data)

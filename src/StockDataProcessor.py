@@ -104,16 +104,15 @@ class StockDataProcessor(BaseDataProvider):
         adjustments = {stock: target_weights[stock] - new_weights[stock] for stock in target_weights}
 
         rebalanced_weights = {stock: new_weights[stock] + adjustments[stock] for stock in new_weights}
-
         return rebalanced_weights, adjustments
+    
 
     def aggregate_returns(self, frequency):
         if self._data.empty:
             raise ValueError("No data available. Ensure `run` has been executed successfully.")
         
         df = self._data
-        
-        if frequency == 'monthly':
+        if frequency == 'monthly': 
             return df.resample('ME').apply(lambda x: (1 + x).prod() - 1)
         elif frequency == 'quarterly':
             return df.resample('QE').apply(lambda x: (1 + x).prod() - 1)
@@ -124,17 +123,17 @@ class StockDataProcessor(BaseDataProvider):
         else:
             raise ValueError("Invalid frequency. Choose from 'monthly', 'quarterly', 'semi-annual', 'annual'.")
 
-    def rebalance_portfolio_over_time(self, target_weights, frequency):
+    def rebalance_portfolio_over_time(self, target_weights, frequency, printbool):
         aggregated_returns = self.aggregate_returns(frequency)
         
         portfolio_weights = target_weights.copy()
         for date, period_returns in aggregated_returns.iterrows():
             rebalanced_weights, adjustments = self.rebalance_with_returns(portfolio_weights, period_returns.to_dict())
-            print(f"\nRebalancing on {date.date()}:")
-            print(f"Portfolio Weights Before: {portfolio_weights}")
-            print(f"Returns: {period_returns.to_dict()}")
-            print(f"New Weights: {rebalanced_weights}")
-            print(f"Adjustments: {adjustments}")
+            if printbool == 1:
+                print(f"\nRebalancing on {date.date()}:")
+                print(f"Portfolio Weights: {portfolio_weights}")
+                print(f"Returns: {period_returns.to_dict()}")
+                print(f"Adjustments to match Weights: {adjustments}")
             
             # Apply rebalanced weights to the appropriate date in the ._data
             if date in self._data.index:
