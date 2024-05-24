@@ -95,3 +95,43 @@ class StockDataProcessor(BaseDataProvider):
         print("Std Devs: ", self._stddev)
         print("Volatility: ", self._volatility)
         print("-------------------------------------------------------")
+
+    def rebalance_with_returns(self, target_weights, returns):
+        new_values = {stock: target_weights[stock] * (1 + returns[stock]) for stock in target_weights}
+        total_new_value = sum(new_values.values())
+
+        new_weights = {stock: new_values[stock] / total_new_value for stock in new_values}
+        adjustments = {stock: target_weights[stock] - new_weights[stock] for stock in target_weights}
+
+        rebalanced_weights = {stock: new_weights[stock] + adjustments[stock] for stock in new_weights}
+
+        return rebalanced_weights, adjustments
+
+    def aggregate_returns(self, frequency):
+        if self._data.empty:
+            raise ValueError("No data available. Ensure `run` has been executed successfully.")
+        
+        df = self._data
+        
+        if frequency == 'monthly':
+            return df.resample('ME').apply(lambda x: (1 + x).prod() - 1)
+        elif frequency == 'quarterly':
+            return df.resample('QE').apply(lambda x: (1 + x).prod() - 1)
+        elif frequency == 'semi-annual':
+            return df.resample('6ME').apply(lambda x: (1 + x).prod() - 1)
+        elif frequency == 'annual':
+            return df.resample('YE').apply(lambda x: (1 + x).prod() - 1)
+        else:
+            raise ValueError("Invalid frequency. Choose from 'monthly', 'quarterly', 'semi-annual', 'annual'.")
+
+    def rebalance_portfolio_over_time(self, target_weights, frequency):
+        aggregated_returns = self.aggregate_returns(frequency)
+        
+        portfolio_weights = target_weights.copy()
+        for date, period_returns in aggregated_returns.iterrows():
+            rebalanced_weights, adjustments = self.rebalance_with_returns(portfolio_weights, period_returns.to_dict())
+            print(f"Rebalancing on {date.date()}:")
+            print(f"Portfolio Weights: {rebalanced_weights}")
+            portfolio_weights = rebalanced_weights
+        
+        return portfolio_weights

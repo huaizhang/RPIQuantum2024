@@ -154,7 +154,14 @@ for i, asset in enumerate(generated_percent_data._data.columns):
 
 fig.suptitle('Generated Percent Returns Distribution')
 plt.savefig("graphs/gen_percent_output.png")
+target_weights = {
+    '^GSPC': 0.30,
+    '^ACWX': 0.30,
+    '^GLAB.L': 0.40
+}
 
-# Calculate monthly returns
-monthly_returns = calculate_monthly_returns(generated_percent_data._data)
-print(monthly_returns)
+frequency = 'quarterly'  # Choose from 'monthly', 'quarterly', 'semi-annual', 'annual'
+
+final_weights = generated_percent_data.rebalance_portfolio_over_time(target_weights, frequency)
+print("Final Portfolio Weights:", {stock: f'{weight:.6f}' for stock, weight in final_weights.items()})
+print(generated_percent_data._data)
