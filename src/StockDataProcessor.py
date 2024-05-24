@@ -130,8 +130,15 @@ class StockDataProcessor(BaseDataProvider):
         portfolio_weights = target_weights.copy()
         for date, period_returns in aggregated_returns.iterrows():
             rebalanced_weights, adjustments = self.rebalance_with_returns(portfolio_weights, period_returns.to_dict())
-            print(f"Rebalancing on {date.date()}:")
-            print(f"Portfolio Weights: {rebalanced_weights}")
+            print(f"\nRebalancing on {date.date()}:")
+            print(f"Portfolio Weights Before: {portfolio_weights}")
+            print(f"Returns: {period_returns.to_dict()}")
+            print(f"New Weights: {rebalanced_weights}")
+            print(f"Adjustments: {adjustments}")
+            
+            # Apply rebalanced weights to the appropriate date in the ._data
+            if date in self._data.index:
+                self._data.loc[date] = [rebalanced_weights[ticker] for ticker in self._tickers]
             portfolio_weights = rebalanced_weights
         
         return portfolio_weights
