@@ -8,6 +8,8 @@ from qiskit import QuantumCircuit
 from qiskit.primitives import Sampler
 import util
 from StockDataProcessor import StockDataProcessor
+
+
 def calculate_monthly_returns(data):
     monthly_returns = data.iloc[:, 1:4]
 
@@ -15,16 +17,27 @@ def calculate_monthly_returns(data):
     monthly_returns = (1 + monthly_returns).cumprod()
 
     # Extract dates and identify month ends
-    dates = data["Date"]
+    first_column_name = data.columns[0]
+    dates = data[first_column_name]
+    dates = pd.to_datetime(dates, errors='coerce')
+
+    # Drop rows with invalid dates (if any)
+    valid_indices = dates.dropna().index
+    monthly_returns = monthly_returns.loc[valid_indices]
+    dates = dates.dropna()
+
     month_ends = dates.groupby([dates.dt.year, dates.dt.month]).transform('max')
     month_end_indices = np.where(dates == month_ends)[0]
 
     # Filter the returns to only include month ends
     monthly_returns = monthly_returns.iloc[month_end_indices]
 
-    # Set the initial value to 1 for calculation purposes
-    monthly_returns.loc[-1] = 1
-    monthly_returns = monthly_returns.sort_index()
+    # Add an initial value of 1 for calculation purposes
+    initial_row = pd.DataFrame([[1] * monthly_returns.shape[1]], columns=monthly_returns.columns)
+    monthly_returns = pd.concat([initial_row, monthly_returns])
+
+    # Reset the index before calculating percentage change
+    monthly_returns = monthly_returns.reset_index(drop=True)
 
     # Calculate the percentage change to get monthly returns
     monthly_returns = monthly_returns.pct_change()
@@ -34,6 +47,10 @@ def calculate_monthly_returns(data):
 
     # Reset the index for the final output
     monthly_returns = monthly_returns.reset_index(drop=True)
+
+    return monthly_returns
+
+
 
 def generate_quantum_normal_distribution(cov_matrix, monthly_expected_log_returns, num_qubits, stddev) -> QuantumCircuit:
     # Calculate bounds as +- 3 standard deviations around the mean
@@ -73,6 +90,8 @@ binary_samples = [k for k, v in counts.items() for _ in range(int(v * 2000))]
 # Apply the conversion function to all samples
 asset_samples = np.array([util.binary_to_asset_values(sample, num_qubits, monthly_expected_log_returns, data._cov_matrix) for sample in binary_samples])
 #creating file for storing generated data
+print("ASSET SAMPLES")
+print(asset_samples)
 util.create_new_xlsx_monthly_dates(asset_samples,filename="data/output.xlsx")
 """
 I've edited the class to take in a dataframe and fill the self._data with that data instead or it can take a file (either/or)
@@ -83,7 +102,7 @@ verify that we are doing it properly
 #creating data object for the generated data
 generated_Data = StockDataProcessor( 
     start=datetime.datetime(2004, 4, 30),
-    end=datetime.datetime(2024, 3, 31),
+    end=datetime.datetime(2170, 11, 30),
     file_path="data/output.xlsx")
 generated_Data.run()
 generated_Data.print_stats()
@@ -99,27 +118,29 @@ for i, asset in enumerate(data._tickers):
 fig.suptitle('Sample Distribution of Multivariate Normal Distribution (120 Samples)')
 plt.savefig("graphs/gen_output.png")
 # Convert generated data to percent returns
-simulated_percent_returns = {ticker: np.exp(generated_Data._data[ticker]) - 1 for ticker in generated_Data._data.columns}
-
+simulated_percent_returns = np.array(np.exp(generated_Data._data) - 1)
 # Convert the simulated percent returns to a DataFrame
-simulated_percent_returns_df = pd.DataFrame(simulated_percent_returns)
+#simulated_percent_returns_df = pd.DataFrame(simulated_percent_returns)
+
+#print(simulated_percent_returns_df)
 # Save the simulated percent returns to Excel
-util.create_new_xlsx_monthly_dates(simulated_percent_returns_df, filename="data/percentage_output.xlsx")
+print("COUNT IS \n\n\n\n",generated_Data._data.count())
+util.create_new_xlsx_monthly_dates(simulated_percent_returns, filename="data/percentage_output.xlsx",secondTime=1)
 
 # Load the generated percent data
 generated_percent_data = StockDataProcessor(
     start=datetime.datetime(2004, 4, 30),
-    end=datetime.datetime(2024, 3, 31),
+    end=datetime.datetime(2170, 11, 30),
     file_path="data/percentage_output.xlsx"
 )
 generated_percent_data.run()
 
 # Ensure the loaded data has no empty rows and columns
-generated_percent_data._data.dropna(how='all', inplace=True)
-generated_percent_data._data.dropna(axis=1, how='all', inplace=True)
+#generated_percent_data._data.dropna(how='all', inplace=True)
+#generated_percent_data._data.dropna(axis=1, how='all', inplace=True)
 
 # Print the cleaned data to check
-print(generated_percent_data._data.head())
+#print(generated_percent_data._data.head())
 
 generated_percent_data.print_stats()
 

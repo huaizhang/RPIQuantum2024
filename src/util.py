@@ -17,7 +17,7 @@ def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
         start_idx = end_idx # Move to the next set of qubits
     return asset_values
 
-def create_new_xlsx_monthly_dates(load_data, filename):
+def create_new_xlsx_monthly_dates(load_data, filename, secondTime = 0):
 
     def month_increment(start_date, num_months):
         # Calculate the new month and year
@@ -43,9 +43,9 @@ def create_new_xlsx_monthly_dates(load_data, filename):
     ws.append(['Date', '^GSPC', '^ACWX', '^GLAB.L'])
 
     # Iterate over the data and append each row to the worksheet with the monthly date
+    #print("ROWS \n\n\n\n\n\n\n\n")
     for i, row in enumerate(load_data):
-        print(row)
-        if(not type(row) == str):
-            ws.append([monthly_dates[i].strftime('%Y-%m-%d')] + row.tolist())
+        #print(row)
+        ws.append([monthly_dates[i].strftime('%Y-%m-%d')] + row.tolist())
     wb.save(filename)
 
