@@ -1,25 +1,26 @@
 import pandas as pd
 import numpy as np
 from qiskit_finance.data_providers import BaseDataProvider
-
 class StockDataProcessor(BaseDataProvider):
     """
-    StockDataProcessor is a child class of parent class BaseDataProvider from Qiskit Finance. 
-    Storing data in this form will be beneficial as it allows usage of further Qiskit Finance functions. 
-
+    StockDataProcessor is a child class of parent class BaseDataProvider from Qiskit Finance.
+    Storing data in this form will be beneficial as it allows usage of further Qiskit Finance functions.
     """
-    def __init__(self, file_path, start, end):
+    def __init__(self, start, end, file_path=None, data=None):
         self._file_path = file_path
         self._start = pd.to_datetime(start)
         self._end = pd.to_datetime(end)
         self._tickers = []
-        self._data = pd.DataFrame()
+        self._data = data if data is not None else pd.DataFrame()
 
         self._cov_matrix = np.ndarray
         self._mean_vec = np.ndarray
         self._correlation = np.ndarray
         self._stddev = np.ndarray
         self._volatility = np.ndarray
+
+        if self._data.empty and self._file_path is None:
+            raise ValueError("Either file_path or data must be provided")
 
     def load_data(self) -> pd.DataFrame:
         try:
@@ -36,6 +37,7 @@ class StockDataProcessor(BaseDataProvider):
             return df
         except Exception as e:
             raise IOError(f"Error loading data from {self._file_path}: {e}")
+
 
     @staticmethod
     def calculate_log_returns(prices: pd.Series) -> pd.Series:
