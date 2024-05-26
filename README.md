@@ -2,7 +2,7 @@
 
 ## Multi Period Asset Allocation Problem
 
-We use simulations to estimate the potential return and risk of a portfolio with specific asset allocation over the next 10 years. We break down this problem into several steps as following. Some sample Python codes are in the [sample file](./src/__pycache__/Python_sample_code.py). 
+We use simulations to estimate the potential return and risk of a portfolio with specific asset allocation over the next 10 years. We break down this problem into several steps as following. Some sample Python codes are in the [sample file](./src/Python_sample_code.py). 
 
 ### 1. Asset classes performance data
 A typical investment portfolio has three asset classes :
@@ -10,7 +10,7 @@ A typical investment portfolio has three asset classes :
 - International Equities : we will use the *MSCI ACWI ex US index* as the proxy.
 - Global fixed income : we will use the *Bloomberg Global Aggregated Index*.
 
-The historic monthly returns of above indices in the past 20 yeears are in this [data file](./data/historic_data.xlsx)[^1].
+The historic monthly returns of above indices in the past 20 years are in this [data file](./data/historic_data.xlsx)[^1].
 
 ---
 
