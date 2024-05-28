@@ -81,12 +81,12 @@ qc = generate_quantum_normal_distribution(data._cov_matrix,monthly_expected_log_
 
 # Sample using the Sampler primitive
 sampler = Sampler()
-job = sampler.run([qc], shots=2000)
+job = sampler.run([qc], shots=240)
 result = job.result()
 
 # Extract quasi-probabilities and convert them to binary-encoded samples
 counts = result.quasi_dists[0].nearest_probability_distribution().binary_probabilities()
-binary_samples = [k for k, v in counts.items() for _ in range(int(v * 2000))]
+binary_samples = [k for k, v in counts.items() for _ in range(int(v * 240))]
 
 # Apply the conversion function to all samples
 asset_samples = np.array([util.binary_to_asset_values(sample, num_qubits, monthly_expected_log_returns, data._cov_matrix) for sample in binary_samples])
@@ -95,8 +95,8 @@ util.create_new_xlsx_monthly_dates(asset_samples,filename="data/output.xlsx")
 
 #creating data object for the generated data
 generated_Data = StockDataProcessor( 
-    start=datetime.datetime(2004, 4, 30),
-    end=datetime.datetime(2170, 11, 30),
+    start=datetime.datetime(2024, 4, 30),
+    end=datetime.datetime(2044, 11, 30),
     file_path="data/output.xlsx")
 generated_Data.run()
 print("[GENERATED DATA STATS]")
@@ -118,13 +118,13 @@ util.create_new_xlsx_monthly_dates(simulated_percent_returns, filename="data/per
 
 # Load the generated percent data
 generated_percent_data = StockDataProcessor(
-    start=datetime.datetime(2004, 4, 30),
-    end=datetime.datetime(2170, 11, 30),
+    start=datetime.datetime(2024, 4, 30),
+    end=datetime.datetime(2044, 11, 30),
     file_path="data/percentage_output.xlsx"
 )
 generated_percent_data.run()
 
-#generated_percent_data.print_stats()
+generated_percent_data.print_stats()
 
 portfolio_returns = generated_percent_data._data.dot(annual_expected_returns)
 
@@ -165,4 +165,4 @@ target_weights = {
 frequency = 'quarterly'  # Choose from 'monthly', 'quarterly', 'semi-annual', 'annual'
 generated_percent_data.rebalance_portfolio_over_time(target_weights, frequency, 0) # change to 1 to see prints
 
-#print(generated_percent_data._data)
+print(generated_percent_data._data)

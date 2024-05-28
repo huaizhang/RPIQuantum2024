@@ -12,7 +12,7 @@ def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
         asset_bin = binary_sample[start_idx:end_idx] # Get the binary string
          # Convert binary to float in [0, 1] range and scale to asset return
         asset_value = int(asset_bin, 2) / (2**qubits - 1)
-        value = mu[i] + np.sqrt(sigma[i][i]) * (4 * asset_value - 1) #bug???
+        value = mu[i] + np.sqrt(sigma[i][i]) * (4 * asset_value - 2) #bug???
         asset_values.append(value)
         start_idx = end_idx # Move to the next set of qubits
     return asset_values
@@ -30,7 +30,7 @@ def create_new_xlsx_monthly_dates(load_data, filename, secondTime = 0):
         # Ensure the new day is the last valid day of the new month if the original day doesn't exist in the new month
         new_day = min(start_date.day, last_day_of_month)
         return datetime.date(new_year, new_month, new_day)
-    start_date = datetime.date(2004, 4, 30)
+    start_date = datetime.date(2024, 4, 30)
     monthly_dates = [month_increment(start_date, i) for i in range(load_data.shape[0])]
 
     if os.path.exists(filename):
