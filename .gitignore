@@ -1,2 +1,4 @@
 .DS_Store
 nasdaq.env
+stockDataProcessor.cpython-310.pyc
+util.cpython-310.pyc

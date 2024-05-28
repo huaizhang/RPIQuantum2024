@@ -112,7 +112,7 @@ for i, asset in enumerate(data._tickers):
 
 fig.suptitle('Sample Distribution of Multivariate Normal Distribution (120 Samples)')
 plt.savefig("graphs/gen_output.png")
-simulated_percent_returns = np.array(np.exp(generated_Data._data) - 1)
+simulated_percent_returns = np.array(np.exp(asset_samples) - 1)
 
 util.create_new_xlsx_monthly_dates(simulated_percent_returns, filename="data/percentage_output.xlsx",secondTime=1)
 
@@ -122,10 +122,10 @@ generated_percent_data = StockDataProcessor(
     end=datetime.datetime(2044, 11, 30),
     file_path="data/percentage_output.xlsx"
 )
-generated_percent_data.run()
-
-generated_percent_data.print_stats()
-
+generated_percent_data.run_nonlog()
+print("Generated Percent Data (Compare with the above)")
+print(generated_percent_data._data)
+"""
 portfolio_returns = generated_percent_data._data.dot(annual_expected_returns)
 
 annual_portfolio_return = (1 + portfolio_returns).prod() ** (12 / generated_Data._data.shape[0]) - 1
@@ -145,6 +145,7 @@ print("annual_portfolio_volatility: ",annual_portfolio_volatility)
 print("sharpe_ratio: ",sharpe_ratio)
 print("max_drawdown: ", max_drawdown)
 print("calmar_ratio: ",calmar_ratio)
+"""
 
 # Plot the generated percent returns
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
@@ -164,5 +165,3 @@ target_weights = {
 }
 frequency = 'quarterly'  # Choose from 'monthly', 'quarterly', 'semi-annual', 'annual'
 generated_percent_data.rebalance_portfolio_over_time(target_weights, frequency, 0) # change to 1 to see prints
-
-print(generated_percent_data._data)

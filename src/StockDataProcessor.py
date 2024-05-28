@@ -55,6 +55,12 @@ class StockDataProcessor(BaseDataProvider):
         self.get_stddev()
         self.get_correlation()
         self.get_volatility()
+    def run_nonlog(self) -> None:
+        # Load data from the Excel file
+        df = self.load_data()
+        self._data = df
+        # Calculate log returns for all tickers
+        # Drop rows with NaN values (e.g., first row due to shift)
 
     def get_mean_vector(self):
         if self._data.empty:
