@@ -12,7 +12,10 @@ def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
         asset_bin = binary_sample[start_idx:end_idx] # Get the binary string
          # Convert binary to float in [0, 1] range and scale to asset return
         asset_value = int(asset_bin, 2) / (2**qubits - 1)
-        value = mu[i] + np.sqrt(sigma[i][i]) * (4 * asset_value - 2) #bug???
+        #z_value = np.
+        from scipy.stats import norm
+        z_value = norm.ppf(asset_value)
+        value = mu[i] + np.sqrt(sigma[i][i]) *  (2.3 * z_value)#(4 * asset_value - 2) 
         asset_values.append(value)
         start_idx = end_idx # Move to the next set of qubits
     return asset_values
