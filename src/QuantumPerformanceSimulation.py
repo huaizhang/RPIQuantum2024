@@ -9,7 +9,6 @@ from qiskit.primitives import Sampler
 import util
 from StockDataProcessor import StockDataProcessor
 
-
 def calculate_monthly_returns(data):
     monthly_returns = data.iloc[:, 1:4]
 
@@ -49,8 +48,6 @@ def calculate_monthly_returns(data):
     monthly_returns = monthly_returns.reset_index(drop=True)
 
     return monthly_returns
-
-
 
 def generate_quantum_normal_distribution(cov_matrix, monthly_expected_log_returns, num_qubits, stddev) -> QuantumCircuit:
     # Calculate bounds as +- 3 standard deviations around the mean
@@ -123,8 +120,6 @@ generated_percent_data = StockDataProcessor(
     file_path="data/percentage_output.xlsx"
 )
 generated_percent_data.run_nonlog()
-print("Generated Percent Data (Compare with the above)")
-print(generated_percent_data._data)
 """
 portfolio_returns = generated_percent_data._data.dot(annual_expected_returns)
 
@@ -145,9 +140,8 @@ print("annual_portfolio_volatility: ",annual_portfolio_volatility)
 print("sharpe_ratio: ",sharpe_ratio)
 print("max_drawdown: ", max_drawdown)
 print("calmar_ratio: ",calmar_ratio)
+Plot the generated percent returns
 """
-
-# Plot the generated percent returns
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 for i, asset in enumerate(generated_percent_data._data.columns):
     sns.histplot(generated_percent_data._data[asset], bins=16, kde=False, ax=axes[i], color='green')
@@ -157,11 +151,12 @@ for i, asset in enumerate(generated_percent_data._data.columns):
 
 fig.suptitle('Generated Percent Returns Distribution')
 plt.savefig("graphs/gen_percent_output.png")
+from decimal import Decimal
 
 target_weights = {
-    '^GSPC': 0.30,
-    '^ACWX': 0.30,
-    '^GLAB.L': 0.40
+    '^GSPC': Decimal('0.3000000'),
+    '^ACWX': Decimal('0.3000000'),
+    '^GLAB.L': Decimal('0.4000000')
 }
 frequency = 'quarterly'  # Choose from 'monthly', 'quarterly', 'semi-annual', 'annual'
-generated_percent_data.rebalance_portfolio_over_time(target_weights, frequency, 0) # change to 1 to see prints
+generated_percent_data.rebalance_portfolio_over_time(target_weights, frequency='monthly', printbool=True)
