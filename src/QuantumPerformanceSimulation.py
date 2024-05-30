@@ -102,7 +102,7 @@ generated_Data.print_stats()
 # Plot the sampled distribution
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 for i, asset in enumerate(data._tickers):
-    sns.histplot(asset_samples[:, i], bins=16, kde=False, ax=axes[i], color='blue')
+    sns.histplot(asset_samples[:, i], bins=32, kde=False, ax=axes[i], color='blue')
     axes[i].set_xlabel(f'{asset} Returns')
     axes[i].set_ylabel('Frequency')
     axes[i].set_title(f'{asset} Returns Distribution (120 Samples)')
@@ -159,4 +159,4 @@ target_weights = {
     '^GLAB.L': Decimal('0.4000000')
 }
 frequency = 'quarterly'  # Choose from 'monthly', 'quarterly', 'semi-annual', 'annual'
-generated_percent_data.rebalance_portfolio_over_time(target_weights, frequency='monthly', printbool=True)
+generated_percent_data.rebalance_portfolio_over_time(target_weights, frequency='monthly', printbool=False)
