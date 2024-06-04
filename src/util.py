@@ -17,7 +17,7 @@ def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
         #z_value = np.
         from scipy.stats import norm
         z_value = norm.ppf(asset_value)
-        value = mu[i] + np.sqrt(sigma[i][i]) *  (2.3 * z_value)#(4 * asset_value - 2) 
+        value = mu[i] + np.sqrt(sigma[i][i]) * (6 * asset_value - 3) #(2.3 * z_value) #(4 * asset_value - 2)# 
         asset_values.append(value)
         start_idx = end_idx # Move to the next set of qubits
     return asset_values
@@ -34,7 +34,7 @@ def create_new_xlsx_monthly_dates(load_data, filename, secondTime = 0):
         
         # Ensure the new day is the last valid day of the new month if the original day doesn't exist in the new month
         new_day = min(start_date.day, last_day_of_month)
-        return datetime.date(new_year, new_month, 1)
+        return datetime.date(new_year, new_month, new_day)
     start_date = datetime.date(2024, 4, 30)
     monthly_dates = [month_increment(start_date, i) for i in range(load_data.shape[0])]
 
