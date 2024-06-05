@@ -22,6 +22,22 @@ def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
         start_idx = end_idx # Move to the next set of qubits
     return asset_values
 
+def binary_to_asset_values_qc(binary_sample, num_qubits, mu, sigma):
+    asset_values = []
+    start_idx = 0 # Index to keep track of qubit groups
+    end_idx = start_idx + num_qubits # End index for current asset's qubits
+    asset_bin = binary_sample[start_idx:end_idx] # Get the binary string
+    # Convert binary to float in [0, 1] range and scale to asset return
+    asset_value = int(asset_bin, 2) / (2**num_qubits - 1)
+    #z_value = np.
+    from scipy.stats import norm
+    z_value = norm.ppf(asset_value)
+    value = mu + np.sqrt(sigma) *  (2.3 * z_value)#(4 * asset_value - 2) 
+    asset_values.append(value)
+    start_idx = end_idx # Move to the next set of qubits
+    return asset_values
+
+
 def create_new_xlsx_monthly_dates(load_data, filename, secondTime = 0):
 
     def month_increment(start_date, num_months):

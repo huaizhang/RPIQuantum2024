@@ -138,7 +138,6 @@ service = QiskitRuntimeService(channel="ibm_quantum", token="01dce3ab39fff4fcd01
 backend = service.backend("ibm_rensselaer")
 pm = generate_preset_pass_manager(backend=backend,optimization_level=1) #transpilation readable for quantum computer
 all_asset_samples = []
-session = Session(backend=backend)
 i = 0
 for qc in qc_array:
     isa_circuit = pm.run(qc)
@@ -153,6 +152,7 @@ for qc in qc_array:
 
     total_counts = sum(counts.values())
     quasi_probabilities = {key: value / total_counts for key, value in counts.items()}
+    print(quasi_probabilities)
     nearest_pd = nearest_probability_distribution(quasi_probabilities)
     print(nearest_pd)
 
@@ -160,7 +160,7 @@ for qc in qc_array:
     asset_samples = np.array([util.binary_to_asset_values_qc(sample, 3, [monthly_expected_log_returns[i]], data._cov_matrix) for sample in binary_samples])
     all_asset_samples.append(asset_samples)
     i += 1
-session.close()
+
 all_asset_samples = np.array(all_asset_samples)
 util.create_new_xlsx_monthly_dates(all_asset_samples,filename="data/output_qc.xlsx")
 
