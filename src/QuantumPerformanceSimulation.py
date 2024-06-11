@@ -77,7 +77,7 @@ num_qubits = [q,q,q]
 #util.run_numpy_simulated_returns(data._cov_matrix,monthly_expected_log_returns)
 qc = generate_quantum_normal_distribution(data._cov_matrix,monthly_expected_log_returns,num_qubits, data._stddev)
 
-num_shots = 2000
+num_shots = 100
 # Sample using the Sampler primitive
 sampler = Sampler()
 job = sampler.run([qc], shots=num_shots)
@@ -85,8 +85,11 @@ result = job.result()
 
 # Extract quasi-probabilities and convert them to binary-encoded samples
 counts = result.quasi_dists[0].nearest_probability_distribution().binary_probabilities()
+print(counts)
+print(len(counts))
 binary_samples = [k for k, v in counts.items() for _ in range(int(v * num_shots))]
-
+print(binary_samples)
+print(len(binary_samples))
 # Apply the conversion function to all samples
 asset_samples = np.array([util.binary_to_asset_values(sample, num_qubits, monthly_expected_log_returns, data._cov_matrix) for sample in binary_samples])
 #creating file for storing generated data
@@ -103,7 +106,7 @@ generated_Data.print_stats()
 
 # Plot the sampled distribution
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-for i, asset in enumerate(data._tickers):
+for i, asset in enumerate(data._tickers): 
     sns.histplot(asset_samples[:, i], bins=2**q, kde=False, ax=axes[i], color='blue')
     axes[i].set_xlabel(f'{asset} Returns')
     axes[i].set_ylabel('Frequency')
