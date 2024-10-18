@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # read data from ./data/historical_data.xlsx
-historic_data = pd.read_excel("../data/historic_data.xlsx")
+historic_data = pd.read_excel("./data/historic_data.xlsx")
 historic_data = historic_data.sort_values("Date")
 historic_data = historic_data.reset_index(drop=True)
 
@@ -78,3 +78,36 @@ annual_portfolio_return = (1 + quarterly_returns["portfolio"]).prod() ** (
 annual_portfolio_volatility = np.std(simulated_returns["portfolio"]) * np.sqrt(4)
 
 # Dynamic rebalancing based on the historical data
+
+import matplotlib.pyplot as plt
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+simulated_returns = simulated_returns.head(120)  # Take only the first 120 months for a 10-year period
+
+# Ensure simulated_returns dataframe exists
+simulated_returns["Date"] = pd.date_range(start='2000-01-01', periods=120, freq='M')  # 120 months = 10 years
+
+# Calculate monthly rebalanced returns
+monthly_returns = historic_data.iloc[:, 1:4].head(120)  # Match historical data to 10 years
+monthly_returns = (1 + monthly_returns).cumprod()
+monthly_returns.loc[-1] = 1
+monthly_returns = monthly_returns.sort_index()
+monthly_returns = monthly_returns.pct_change().dropna().reset_index(drop=True)
+
+# Calculate portfolio performance with monthly rebalancing
+monthly_returns["portfolio"] = monthly_returns.dot(weights)
+cumulative_monthly_returns = (1 + monthly_returns["portfolio"]).cumprod()
+
+# Plotting the results over 10 years
+plt.figure(figsize=(10, 6))
+plt.plot(simulated_returns["Date"], cumulative_monthly_returns, label='Cumulative Portfolio Returns (Monthly Rebalancing)', color='blue')
+plt.title('Cumulative Portfolio Returns over 10 Years with Monthly Rebalancing')
+plt.xlabel('Time (Months)')
+plt.ylabel('Cumulative Returns')
+plt.legend()
+plt.grid(True)
+plt.savefig("cumulative_portfolio_returns_10_years.png")
+print("Portfolio performance saved as cumulative_portfolio_returns_10_years.png")
