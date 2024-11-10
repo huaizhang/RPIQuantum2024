@@ -123,7 +123,7 @@ def generate_quantum_normal_distribution_all_assets(expected_log_returns, varian
 data = StockDataProcessor(
     start=datetime.datetime(2004, 4, 30),
     end=datetime.datetime(2024, 3, 31),
-    file_path="./data/historic_data.xlsx"
+    file_path="../data/historic_data.xlsx"
 )
 data.run()
 data.print_stats()
@@ -162,7 +162,7 @@ for qc in qc_array:
     i += 1
 
 all_asset_samples = np.array(all_asset_samples)
-util.create_new_xlsx_monthly_dates(all_asset_samples,filename="data/output_qc.xlsx")
+util.create_new_xlsx_monthly_dates(all_asset_samples,filename="../data/output_qc.xlsx")
 
 for i, asset_samples in enumerate(all_asset_samples):
     # Reshape or flatten the asset samples as needed
@@ -172,7 +172,7 @@ for i, asset_samples in enumerate(all_asset_samples):
     plt.xlabel(f'Asset {i+1} Returns')
     plt.ylabel('Frequency')
     plt.title(f'Asset {i+1} Returns Distribution')
-    plt.savefig(f"graphs/asset_{i+1}_returns_distribution.png")
+    plt.savefig(f"../graphs/asset_{i+1}_returns_distribution.png")
     plt.close()
 
 
@@ -180,7 +180,7 @@ for i, asset_samples in enumerate(all_asset_samples):
 generated_Data = StockDataProcessor( 
     start=datetime.datetime(2024, 4, 30),
     end=datetime.datetime(2044, 11, 30),
-    file_path="data/output_qc.xlsx")
+    file_path="../data/output_qc.xlsx")
 generated_Data.run()
 print("[GENERATED DATA STATS]")
 generated_Data.print_stats()    

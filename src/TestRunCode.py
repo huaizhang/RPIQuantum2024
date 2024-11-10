@@ -108,7 +108,7 @@ num_qubits = [q,q,q]
 #qc = generate_quantum_normal_distribution(data._correlation,monthly_expected_log_returns,num_qubits, data._stddev)
 qc = generate_quantum_normal_distribution(data._cov_matrix,monthly_expected_log_returns,num_qubits, data._stddev)
 
-service = QiskitRuntimeService(channel="ibm_quantum", token="a9f26e0fa9d097c481d6d860162a64996acf1d166c3ef4084f80aaf8009e58627f94b74b51fe16678f97717e9330eeb1c717be836b39de3dc277bea8d0564c6c")
+service = QiskitRuntimeService(channel="ibm_quantum", token="YOUR_API_KEY")
 backend = service.backend("ibm_rensselaer")
 pm = generate_preset_pass_manager(backend=backend,optimization_level=1) #transpilation readable for quantum computer
 isa_circuit = pm.run(qc)
@@ -131,13 +131,13 @@ print(np.cov(np.array(time_series).T))
 
 plot_data(time_series)
 
-util.create_new_xlsx_monthly_dates(np.array(time_series),filename="data/output_qc.xlsx")
+util.create_new_xlsx_monthly_dates(np.array(time_series),filename="../data/output_qc.xlsx")
 
 #creating data object for the generated data
 generated_Data = StockDataProcessor( 
     start=datetime.datetime(2024, 4, 30),
     end=datetime.datetime(2190, 11, 30),
-    file_path="data/output_qc.xlsx")
+    file_path="../data/output_qc.xlsx")
 generated_Data.run()
 generated_Data.print_stats()
 

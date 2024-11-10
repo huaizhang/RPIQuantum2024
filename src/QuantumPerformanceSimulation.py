@@ -63,7 +63,7 @@ def generate_quantum_normal_distribution(cov_matrix, monthly_expected_log_return
 data = StockDataProcessor(
     start=datetime.datetime(2004, 4, 30),
     end=datetime.datetime(2024, 3, 31),
-    file_path="./data/historic_data.xlsx"
+    file_path="../data/historic_data.xlsx"
 )
 data.run()
 print("[ORIGINAL DATA STATS]")
@@ -93,13 +93,13 @@ binary_samples = [k for k, v in counts.items() for _ in range(int(v * num_shots)
 # Apply the conversion function to all samples
 asset_samples = np.array([util.binary_to_asset_values(sample, num_qubits, monthly_expected_log_returns, data._cov_matrix) for sample in binary_samples])
 #creating file for storing generated data
-util.create_new_xlsx_monthly_dates(asset_samples,filename="data/output.xlsx")
+util.create_new_xlsx_monthly_dates(asset_samples,filename="../data/output.xlsx")
 
 #creating data object for the generated data
 generated_Data = StockDataProcessor( 
     start=datetime.datetime(2024, 4, 30),
     end=datetime.datetime(2170, 11, 30),
-    file_path="data/output.xlsx")
+    file_path="../data/output.xlsx")
 generated_Data.run()
 print("[GENERATED DATA STATS]")
 generated_Data.print_stats()
@@ -114,16 +114,16 @@ for i, asset in enumerate(tickers):
     axes[i].set_title(f'{asset} Returns Distribution ({num_shots} Samples)')
 
 fig.suptitle(f'Sample Distribution of Multivariate Normal Distribution ({num_shots} Samples)')
-plt.savefig("graphs/gen_output.png")
+plt.savefig("../graphs/gen_output.png")
 simulated_percent_returns = np.array(np.exp(asset_samples) - 1)
 
-util.create_new_xlsx_monthly_dates(simulated_percent_returns, filename="data/percentage_output.xlsx",secondTime=1)
+util.create_new_xlsx_monthly_dates(simulated_percent_returns, filename="../data/percentage_output.xlsx",secondTime=1)
 
 # Load the generated percent data
 generated_percent_data = StockDataProcessor(
     start=datetime.datetime(2024, 4, 30),
     end=datetime.datetime(2044, 11, 30),
-    file_path="data/percentage_output.xlsx"
+    file_path="../data/percentage_output.xlsx"
 )
 generated_percent_data.run_nonlog()
 """
@@ -156,7 +156,7 @@ for i, asset in enumerate(generated_percent_data._data.columns):
     axes[i].set_title(f'{asset} Percent Returns Distribution')
 
 fig.suptitle('Generated Percent Returns Distribution')
-plt.savefig("graphs/gen_percent_output.png")
+plt.savefig("../graphs/gen_percent_output.png")
 from decimal import Decimal
 
 target_weights = {
