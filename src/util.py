@@ -87,6 +87,54 @@ def binary_to_asset_values(binary_sample, num_qubits, mu, sigma):
         start_idx = end_idx # Move to the next set of qubits
     return asset_values
 
+import numpy as np
+
+def binary_to_asset_values_test(dicts, num_qubits, mu, sigma):
+    """
+    Convert binary strings to asset values using normalization and scaling.
+    
+    Parameters:
+    - dicts: List of dictionaries with binary strings as keys and their corresponding values.
+    - num_qubits: List of integers indicating the number of qubits per asset.
+    - mu: List of means for each asset.
+    - sigma: Covariance matrix for scaling each asset.
+    
+    Returns:
+    - List of lists with scaled asset values for each dictionary.
+    """
+    # Initialize lists to store asset values for each dictionary
+    all_asset_values = [[] for _ in range(len(dicts))]
+    
+    # Convert all dictionary keys from binary strings to integers
+    dicts = [
+        {int(str(key), 2): val for key, val in d.items()}
+        for d in dicts
+    ]
+    
+    # Iterate over each asset type
+    start_idx = 0
+    for i, qubits in enumerate(num_qubits):
+        end_idx = start_idx + qubits
+        
+        # Process each dictionary
+        for j, d in enumerate(dicts):
+            keys = list(d.keys())
+            
+            # Calculate mean and standard deviation for current asset class
+            asset_mean = np.mean(keys)
+            asset_std = np.std(keys)
+            
+            # Normalize and scale asset values
+            for key in keys:
+                normalized_value = ((key - asset_mean) / asset_std) if asset_std != 0 else 0
+                value = mu[i] + np.sqrt(sigma[i][i]) * normalized_value
+                all_asset_values[j].append(value)
+        
+        start_idx = end_idx
+    
+    return all_asset_values
+
+
 def create_new_xlsx_monthly_dates(load_data, filename, secondTime = 0):
 
     def month_increment(start_date, num_months):
