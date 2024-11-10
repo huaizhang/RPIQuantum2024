@@ -134,7 +134,7 @@ num_qubits = [3,3,3]
 
 qc_array = generate_quantum_normal_distribution_all_assets(monthly_expected_log_returns, np.diag(data._cov_matrix), num_qubits, data._stddev)
 
-service = QiskitRuntimeService(channel="ibm_quantum", token="01dce3ab39fff4fcd01e41140ecd8e33c4145c3612dd02593c9c1b476ed339084e98b2cb6c1d088d86faf2ac26a49edb7d21344c33ac53fb0a40675b28857390")
+service = QiskitRuntimeService(channel="ibm_quantum", token="YOUR_API_KEY")
 backend = service.backend("ibm_rensselaer")
 pm = generate_preset_pass_manager(backend=backend,optimization_level=1) #transpilation readable for quantum computer
 all_asset_samples = []
